@@ -1,0 +1,20 @@
+package: github.com/nlamirault/syno_exporter
+import:
+- package: github.com/prometheus/client_golang
+  subpackages:
+  - prometheus
+- package: github.com/prometheus/common
+  subpackages:
+  - log
+- package: github.com/prometheus/client_model
+  subpackages:
+  - go
+- package: github.com/prometheus/procfs
+- package: github.com/Sirupsen/logrus
+- package: github.com/beorn7/perks
+  subpackages:
+  - quantile
+- package: github.com/matttproud/golang_protobuf_extensions
+  subpackages:
+  - pbutil
+- package: github.com/soniah/gosnmp
