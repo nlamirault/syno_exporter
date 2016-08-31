@@ -1,0 +1,11 @@
+syno_exporter
+syno_exporter-[0-9.]*_*
+
+# Files
+.DS_Store
+/glide.lock
+
+# Editor swap files
+*.swp
+*.swo
+*.swn
