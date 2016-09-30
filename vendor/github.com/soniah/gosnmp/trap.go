@@ -52,11 +52,11 @@ func (x *GoSNMP) SendTrap(pdus []SnmpPDU) (result *SnmpPacket, err error) {
 	copy(pdus[1:], pdus)
 	pdus[0] = timetickPDU
 
-	packetOut := x.mkSnmpPacket(SNMPv2Trap, 0, 0)
+	packetOut := x.mkSnmpPacket(SNMPv2Trap, pdus, 0, 0)
 
 	// all sends wait for the return packet, except for SNMPv2Trap
 	// -> wait is false
-	return x.send(pdus, packetOut, false)
+	return x.send(packetOut, false)
 }
 
 //
@@ -99,9 +99,7 @@ func (t *TrapListener) Listen(addr string) (err error) {
 		var buf [4096]byte
 		rlen, remote, err := conn.ReadFromUDP(buf[:])
 		if err != nil {
-			if t.Params.loggingEnabled {
-				t.Params.Logger.Printf("TrapListener: error in read %s\n", err)
-			}
+			t.Params.logPrintf("TrapListener: error in read %s\n", err)
 		}
 
 		msg := buf[:rlen]
@@ -118,12 +116,22 @@ func debugTrapHandler(s *SnmpPacket, u *net.UDPAddr) {
 // Unmarshal SNMP Trap
 func (x *GoSNMP) unmarshalTrap(trap []byte) (result *SnmpPacket) {
 	result = new(SnmpPacket)
-	err := x.unmarshal(trap, result)
+	cursor, err := x.unmarshalHeader(trap, result)
 	if err != nil {
-		if x.loggingEnabled {
-			x.Logger.Printf("unmarshalTrap: %s\n", err)
-		}
+		x.logPrintf("unmarshalTrap: %s\n", err)
 	}
-
+	if result.Version == Version3 {
+		if result.SecurityModel == UserSecurityModel {
+			err = x.testAuthentication(trap, result)
+			if err != nil {
+				x.logPrintf("unmarshalTrap: %s\n", err)
+			}
+		}
+		trap, cursor, err = x.decryptPacket(trap, cursor, result)
+	}
+	err = x.unmarshalPayload(trap, cursor, result)
+	if err != nil {
+		x.logPrintf("unmarshalTrap: %s\n", err)
+	}
 	return result
 }

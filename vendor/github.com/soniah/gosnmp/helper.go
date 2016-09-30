@@ -1,4 +1,4 @@
-// Copyright 2012-2014 The GoSNMP Authors. All rights reserved.  Use of this
+// Copyright 2012-2016 The GoSNMP Authors. All rights reserved.  Use of this
 // source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
@@ -71,41 +71,31 @@ func (x *GoSNMP) decodeValue(data []byte, msg string) (retVal *variable, err err
 
 	case Integer:
 		// 0x02. signed
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is Integer")
-		}
+		x.logPrint("decodeValue: type is Integer")
 		length, cursor := parseLength(data)
 		var ret int
 		var err error
 		if ret, err = parseInt(data[cursor:length]); err != nil {
-			if x.loggingEnabled {
-				x.Logger.Printf("%v:", err)
-			}
+			x.logPrintf("%v:", err)
 			return retVal, fmt.Errorf("bytes: % x err: %v", data, err)
 		}
 		retVal.Type = Integer
 		retVal.Value = ret
 	case OctetString:
 		// 0x04
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is OctetString")
-		}
+		x.logPrint("decodeValue: type is OctetString")
 		length, cursor := parseLength(data)
 		retVal.Type = OctetString
 		retVal.Value = []byte(data[cursor:length])
 	case Null:
 		// 0x05
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is Null")
-		}
+		x.logPrint("decodeValue: type is Null")
 		retVal.Type = Null
 		retVal.Value = nil
 	case ObjectIdentifier:
 		// 0x06
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is ObjectIdentifier")
-		}
-		rawOid, _, err := x.parseRawField(data, "OID")
+		x.logPrint("decodeValue: type is ObjectIdentifier")
+		rawOid, _, err := parseRawField(data, "OID")
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing OID Value: %s", err.Error())
 		}
@@ -118,9 +108,7 @@ func (x *GoSNMP) decodeValue(data []byte, msg string) (retVal *variable, err err
 		retVal.Value = oidToString(oid)
 	case IPAddress:
 		// 0x40
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is IPAddress")
-		}
+		x.logPrint("decodeValue: type is IPAddress")
 		retVal.Type = IPAddress
 		switch data[1] {
 		case 4: // IPv4
@@ -140,95 +128,69 @@ func (x *GoSNMP) decodeValue(data []byte, msg string) (retVal *variable, err err
 		}
 	case Counter32:
 		// 0x41. unsigned
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is Counter32")
-		}
+		x.logPrint("decodeValue: type is Counter32")
 		length, cursor := parseLength(data)
 		ret, err := parseUint(data[cursor:length])
 		if err != nil {
-			if x.loggingEnabled {
-				x.Logger.Printf("decodeValue: err is %v", err)
-			}
+			x.logPrintf("decodeValue: err is %v", err)
 			break
 		}
 		retVal.Type = Counter32
 		retVal.Value = ret
 	case Gauge32:
 		// 0x42. unsigned
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is Gauge32")
-		}
+		x.logPrint("decodeValue: type is Gauge32")
 		length, cursor := parseLength(data)
 		ret, err := parseUint(data[cursor:length])
 		if err != nil {
-			if x.loggingEnabled {
-				x.Logger.Printf("decodeValue: err is %v", err)
-			}
+			x.logPrintf("decodeValue: err is %v", err)
 			break
 		}
 		retVal.Type = Gauge32
 		retVal.Value = ret
 	case TimeTicks:
 		// 0x43
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is TimeTicks")
-		}
+		x.logPrint("decodeValue: type is TimeTicks")
 		length, cursor := parseLength(data)
 		ret, err := parseInt(data[cursor:length])
 		if err != nil {
-			if x.loggingEnabled {
-				x.Logger.Printf("decodeValue: err is %v", err)
-			}
+			x.logPrintf("decodeValue: err is %v", err)
 			break
 		}
 		retVal.Type = TimeTicks
 		retVal.Value = ret
 	case Counter64:
 		// 0x46
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is Counter64")
-		}
+		x.logPrint("decodeValue: type is Counter64")
 		length, cursor := parseLength(data)
-		ret, err := parseInt64(data[cursor:length])
+		ret, err := parseUint64(data[cursor:length])
 		if err != nil {
-			if x.loggingEnabled {
-				x.Logger.Printf("decodeValue: err is %v", err)
-			}
+			x.logPrintf("decodeValue: err is %v", err)
 			break
 		}
 		retVal.Type = Counter64
 		retVal.Value = ret
 	case NoSuchObject:
 		// 0x80
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is NoSuchObject")
-		}
+		x.logPrint("decodeValue: type is NoSuchObject")
 		retVal.Type = NoSuchObject
 		retVal.Value = nil
 	case NoSuchInstance:
 		// 0x81
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is NoSuchInstance")
-		}
+		x.logPrint("decodeValue: type is NoSuchInstance")
 		retVal.Type = NoSuchInstance
 		retVal.Value = nil
 	case EndOfMibView:
 		// 0x82
-		if x.loggingEnabled {
-			x.Logger.Print("decodeValue: type is EndOfMibView")
-		}
+		x.logPrint("decodeValue: type is EndOfMibView")
 		retVal.Type = EndOfMibView
 		retVal.Value = nil
 	default:
-		if x.loggingEnabled {
-			x.Logger.Printf("decodeValue: type %x isn't implemented", data[0])
-		}
+		x.logPrintf("decodeValue: type %x isn't implemented", data[0])
 		retVal.Type = UnknownType
 		retVal.Value = nil
 	}
-	if x.loggingEnabled {
-		x.Logger.Printf("decodeValue: value is %#v", retVal.Value)
-	}
+	x.logPrintf("decodeValue: value is %#v", retVal.Value)
 	return
 }
 
@@ -576,8 +538,8 @@ func parseInt(bytes []byte) (int, error) {
 func parseLength(bytes []byte) (length int, cursor int) {
 	if len(bytes) <= 2 {
 		// handle null octet strings ie "0x04 0x00"
-		cursor = 1
-		length = 2
+		cursor = len(bytes)
+		length = len(bytes)
 	} else if int(bytes[1]) <= 127 {
 		length = int(bytes[1])
 		length += 2
@@ -623,7 +585,7 @@ func parseObjectIdentifier(bytes []byte) (s []int, err error) {
 	return
 }
 
-func (x *GoSNMP) parseRawField(data []byte, msg string) (interface{}, int, error) {
+func parseRawField(data []byte, msg string) (interface{}, int, error) {
 	switch Asn1BER(data[0]) {
 	case Integer:
 		length, cursor := parseLength(data)
@@ -647,7 +609,7 @@ func (x *GoSNMP) parseRawField(data []byte, msg string) (interface{}, int, error
 // parseUint64 treats the given bytes as a big-endian, unsigned integer and returns
 // the result.
 func parseUint64(bytes []byte) (ret uint64, err error) {
-	if len(bytes) > 8 {
+	if len(bytes) > 9 || (len(bytes) > 8 && bytes[0] != 0x0) {
 		// We'll overflow a uint64 in this case.
 		err = errors.New("integer too large")
 		return

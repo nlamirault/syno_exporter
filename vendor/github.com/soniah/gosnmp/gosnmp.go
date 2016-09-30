@@ -1,4 +1,4 @@
-// Copyright 2012-2014 The GoSNMP Authors. All rights reserved.  Use of this
+// Copyright 2012-2016 The GoSNMP Authors. All rights reserved.  Use of this
 // source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
@@ -35,17 +35,20 @@ const (
 
 // GoSNMP represents GoSNMP library state
 type GoSNMP struct {
+	// Conn is net connection to use, typically established using GoSNMP.Connect()
+	Conn net.Conn
+
 	// Target is an ipv4 address
 	Target string
 
 	// Port is a udp port
 	Port uint16
 
-	// Version is an SNMP Version
-	Version SnmpVersion
-
 	// Community is an SNMP Community string
 	Community string
+
+	// Version is an SNMP Version
+	Version SnmpVersion
 
 	// Timeout is the timeout for the SNMP Query
 	Timeout time.Duration
@@ -60,6 +63,23 @@ type GoSNMP struct {
 
 	// loggingEnabled is set if the Logger is nil, short circuits any 'Logger' calls
 	loggingEnabled bool
+
+	// MaxOids is the maximum number of oids allowed in a Get()
+	// (default: MaxOids)
+	MaxOids int
+
+	// MaxRepetitions sets the GETBULK max-repetitions used by BulkWalk*
+	MaxRepetitions uint8
+
+	// NonRepeaters sets the GETBULK max-repeaters used by BulkWalk*
+	// (default: 0 as per RFC 1905)
+	NonRepeaters int
+
+	// Internal - used to sync requests to responses
+	requestID uint32
+	random    *rand.Rand
+
+	rxBuf *[rxBufSize]byte // has to be pointer due to https://github.com/golang/go/issues/11728
 
 	// MsgFlags is an SNMPV3 MsgFlags
 	MsgFlags SnmpV3MsgFlags
@@ -76,32 +96,11 @@ type GoSNMP struct {
 	// ContextName is SNMPV3 ContextName in ScopedPDU
 	ContextName string
 
-	// Conn is net connection to use, typically establised using GoSNMP.Connect()
-	Conn net.Conn
-
-	// MaxOids is the maximum number of oids allowed in a Get()
-	// (default: MaxOids)
-	MaxOids int
-
-	// MaxRepetitions sets the GETBULK max-repetitions used by BulkWalk*
-	// (default: 50) TODO fix "magic number", should this be defaultMaxRepetitions?
-	MaxRepetitions int
-
-	// NonRepeaters sets the GETBULK max-repeaters used by BulkWalk*
-	// (default: 0 as per RFC 1905)
-	NonRepeaters int
-
-	// Internal - used to sync requests to responses
-	requestID uint32
-	random    *rand.Rand
-
-	rxBuf *[rxBufSize]byte // has to be pointer due to https://github.com/golang/go/issues/11728
-
 	// Internal - used to sync requests to responses - snmpv3
 	msgID uint32
 }
 
-// The default connection settings
+// Default connection settings
 var Default = &GoSNMP{
 	Port:      161,
 	Community: "public",
@@ -193,20 +192,13 @@ const (
 // For historical reasons (ie this is part of the public API), the method won't
 // be renamed.
 func (x *GoSNMP) Connect() error {
-	if x.Logger == nil {
-		x.Logger = log.New(ioutil.Discard, "", 0)
-	} else {
-		x.loggingEnabled = true
-	}
-
-	if x.MaxOids == 0 {
-		x.MaxOids = MaxOids
-	} else if x.MaxOids < 0 {
-		return fmt.Errorf("MaxOids cannot be less than 0")
+	var err error
+	err = x.validateParameters()
+	if err != nil {
+		return err
 	}
 
 	addr := net.JoinHostPort(x.Target, strconv.Itoa(int(x.Port)))
-	var err error
 	x.Conn, err = net.DialTimeout("udp", addr, x.Timeout)
 	if err != nil {
 		return fmt.Errorf("Error establishing connection to host: %s\n", err.Error())
@@ -223,8 +215,31 @@ func (x *GoSNMP) Connect() error {
 
 	x.rxBuf = new([rxBufSize]byte)
 
+	return nil
+}
+
+func (x *GoSNMP) validateParameters() error {
+	if x.Logger == nil {
+		x.Logger = log.New(ioutil.Discard, "", 0)
+	} else {
+		x.loggingEnabled = true
+	}
+
+	if x.MaxOids == 0 {
+		x.MaxOids = MaxOids
+	} else if x.MaxOids < 0 {
+		return fmt.Errorf("MaxOids cannot be less than 0")
+	}
+
 	if x.Version == Version3 {
-		if err = x.setSalt(); err != nil {
+		x.MsgFlags |= Reportable // tell the snmp server that a report PDU MUST be sent
+
+		err := x.validateParametersV3()
+		if err != nil {
+			return err
+		}
+		err = x.SecurityParameters.init(x.Logger)
+		if err != nil {
 			return err
 		}
 	}
@@ -232,7 +247,7 @@ func (x *GoSNMP) Connect() error {
 	return nil
 }
 
-func (x *GoSNMP) mkSnmpPacket(pdutype PDUType, nonRepeaters uint8, maxRepetitions uint8) *SnmpPacket {
+func (x *GoSNMP) mkSnmpPacket(pdutype PDUType, pdus []SnmpPDU, nonRepeaters uint8, maxRepetitions uint8) *SnmpPacket {
 	var newSecParams SnmpV3SecurityParameters
 	if x.SecurityParameters != nil {
 		newSecParams = x.SecurityParameters.Copy()
@@ -250,6 +265,7 @@ func (x *GoSNMP) mkSnmpPacket(pdutype PDUType, nonRepeaters uint8, maxRepetition
 		PDUType:            pdutype,
 		NonRepeaters:       nonRepeaters,
 		MaxRepetitions:     maxRepetitions,
+		Variables:          pdus,
 	}
 }
 
@@ -266,8 +282,8 @@ func (x *GoSNMP) Get(oids []string) (result *SnmpPacket, err error) {
 		pdus = append(pdus, SnmpPDU{oid, Null, nil, x.Logger})
 	}
 	// build up SnmpPacket
-	packetOut := x.mkSnmpPacket(GetRequest, 0, 0)
-	return x.send(pdus, packetOut, true)
+	packetOut := x.mkSnmpPacket(GetRequest, pdus, 0, 0)
+	return x.send(packetOut, true)
 }
 
 // Set sends an SNMP SET request
@@ -275,11 +291,11 @@ func (x *GoSNMP) Set(pdus []SnmpPDU) (result *SnmpPacket, err error) {
 	var packetOut *SnmpPacket
 	switch pdus[0].Type {
 	case Integer, OctetString:
-		packetOut = x.mkSnmpPacket(SetRequest, 0, 0)
+		packetOut = x.mkSnmpPacket(SetRequest, pdus, 0, 0)
 	default:
 		return nil, fmt.Errorf("ERR:gosnmp currently only supports SNMP SETs for Integers and OctetStrings")
 	}
-	return x.send(pdus, packetOut, true)
+	return x.send(packetOut, true)
 }
 
 // GetNext sends an SNMP GETNEXT request
@@ -297,12 +313,14 @@ func (x *GoSNMP) GetNext(oids []string) (result *SnmpPacket, err error) {
 	}
 
 	// Marshal and send the packet
-	packetOut := x.mkSnmpPacket(GetNextRequest, 0, 0)
+	packetOut := x.mkSnmpPacket(GetNextRequest, pdus, 0, 0)
 
-	return x.send(pdus, packetOut, true)
+	return x.send(packetOut, true)
 }
 
 // GetBulk sends an SNMP GETBULK request
+//
+// For maxRepetitions greater than 255, use BulkWalk() or BulkWalkAll()
 func (x *GoSNMP) GetBulk(oids []string, nonRepeaters uint8, maxRepetitions uint8) (result *SnmpPacket, err error) {
 	oidCount := len(oids)
 	if oidCount > x.MaxOids {
@@ -317,8 +335,8 @@ func (x *GoSNMP) GetBulk(oids []string, nonRepeaters uint8, maxRepetitions uint8
 	}
 
 	// Marshal and send the packet
-	packetOut := x.mkSnmpPacket(GetBulkRequest, nonRepeaters, maxRepetitions)
-	return x.send(pdus, packetOut, true)
+	packetOut := x.mkSnmpPacket(GetBulkRequest, pdus, nonRepeaters, maxRepetitions)
+	return x.send(packetOut, true)
 }
 
 //

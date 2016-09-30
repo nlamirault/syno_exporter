@@ -1,4 +1,4 @@
-// Copyright 2012-2014 The GoSNMP Authors. All rights reserved.  Use of this
+// Copyright 2012-2016 The GoSNMP Authors. All rights reserved.  Use of this
 // source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
@@ -55,6 +55,24 @@ func TestMarshalUint32(t *testing.T) {
 		}
 		if !checkByteEquality2(test.goodBytes, result) {
 			t.Errorf("%d: expected %0x got %0x", i, test.goodBytes, result)
+		}
+	}
+}
+
+func TestParseUint64(t *testing.T) {
+	tests := []struct {
+		data []byte
+		n    uint64
+	}{
+		{[]byte{}, 0},
+		{[]byte{0x00}, 0},
+		{[]byte{0x01}, 1},
+		{[]byte{0x01, 0x01}, 257},
+		{[]byte{0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1e, 0xb3, 0xbf}, 18446744073694786495},
+	}
+	for _, test := range tests {
+		if ret, err := parseUint64(test.data); err != nil || ret != test.n {
+			t.Errorf("parseUint64(%v) = %d, %v want %d, <nil>", test.data, ret, err, test.n)
 		}
 	}
 }
