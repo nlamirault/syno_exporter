@@ -34,13 +34,13 @@ Launch the Prometheus exporter :
 
     $ syno_exporter -log.level=debug -diskstation 192.168.1.11
 
-Check SNMP informations from your Diskstation :
+Check SNMP informations from your Diskstation (Change your *community* name):
 
     # System load
-    $ snmpget -v 1 -c "community" 192.168.1.11 .1.3.6.1.4.1.2021.10.1.3.1
+    $ snmpget -v 1 -c "public" 192.168.1.11 .1.3.6.1.4.1.2021.10.1.3.1
 
     # Get available disk space for /
-    $ snmpget -v 1 -c "community" 192.168.1.11 .1.3.6.1.4.1.2021.9.1.7.1
+    $ snmpget -v 1 -c "public" 192.168.1.11 .1.3.6.1.4.1.2021.9.1.7.1
 
 
 ## Development

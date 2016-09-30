@@ -36,6 +36,7 @@ type Client struct {
 
 // NewClient defines a new client for the Synology Diskstation
 func NewClient(dsIP string, interval time.Duration) (*Client, error) {
+	log.Debugf("New SNMP Client for Synology Disksation: %s", dsIP)
 	return &Client{
 		Diskstation: dsIP,
 		Interval:    interval,
@@ -51,7 +52,7 @@ func NewClient(dsIP string, interval time.Duration) (*Client, error) {
 			Target:    dsIP,
 			Port:      161,
 			Community: "public",
-			Version:   gosnmp.Version2c,
+			Version:   gosnmp.Version1,
 			Timeout:   time.Duration(2) * time.Second,
 		},
 	}, nil
@@ -80,7 +81,7 @@ func (c *Client) CPUMetrics() (map[string]float64, error) {
 
 func (c *Client) MemoryMetrics() (map[string]float64, error) {
 	log.Infof("[Client] Collect Memory metrics")
-	return c.collect(c.Plugins["cpu"])
+	return c.collect(c.Plugins["memory"])
 }
 
 func (c *Client) NetworkMetrics() (map[string]float64, error) {

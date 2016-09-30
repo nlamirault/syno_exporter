@@ -39,10 +39,10 @@ func (p SystemPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 		// fmt.Sprintf("%s.5.3", oidSystem), // version
 		fmt.Sprintf("%s.5.4", oidSystem), // upgradeAvailable
 	}
-	log.Infof("[CPU Plugin] Get SNMP data")
+	log.Infof("[System Plugin] Get SNMP data")
 	result, err := snmp.Get(oids)
 	if err != nil {
-		return nil, fmt.Errorf("[CPU Plugin] SNMP Error: %v", err)
+		return nil, fmt.Errorf("[System Plugin] SNMP Error: %v", err)
 	}
 	return map[string]float64{
 		"system-status":          float64(result.Variables[0].Value.(uint)),

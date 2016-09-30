@@ -236,8 +236,12 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	e.collectSystemMetrics(ch)
-	e.collectDiskMetrics(ch)
+	// e.collectSystemMetrics(ch)
+	// e.collectCPUMetrics(ch)
+	e.collectLoadMetrics(ch)
+	// e.collectMemoryMetrics(ch)
+	// e.collectNetworkMetrics(ch)
+	// e.collectDiskMetrics(ch)
 
 	log.Infof("Syno exporter finished")
 }
