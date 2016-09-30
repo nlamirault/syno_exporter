@@ -39,7 +39,8 @@ func getTemperatures(snmp *gosnmp.GoSNMP) (map[int]float64, error) {
 	log.Infof("[Disk Plugin] Get SNMP disk temperatures")
 	result, err := snmp.Get([]string{
 		".1.3.6.1.4.1.6574.2.1.1.6.0",
-		".1.3.6.1.4.1.6574.2.1.1.6.1"})
+		// ".1.3.6.1.4.1.6574.2.1.1.6.1",
+	})
 	if err != nil {
 		return nil, fmt.Errorf("[Disk Plugin] SNMP Error: %v", err)
 	}

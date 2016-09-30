@@ -28,7 +28,8 @@ func (p LoadPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 	result, err := snmp.Get([]string{
 		".1.3.6.1.4.1.2021.10.1.5.1",
 		".1.3.6.1.4.1.2021.10.1.5.2",
-		".1.3.6.1.4.1.2021.10.1.5.3"})
+		".1.3.6.1.4.1.2021.10.1.5.3",
+	})
 	if err != nil {
 		return nil, fmt.Errorf("[Load Plugin] SNMP Error: %v", err)
 	}
