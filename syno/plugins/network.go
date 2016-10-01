@@ -34,8 +34,11 @@ func (p NetworkPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[Net Plugin] SNMP Error: %v", err)
 	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
+
 	return map[string]float64{
-		"net-in":  float64(result.Variables[0].Value.(uint)),
-		"net-out": float64(result.Variables[1].Value.(uint)),
+		"net-in":  float64(gosnmp.ToBigInt(result.Variables[0].Value).Int64()),
+		"net-out": float64(gosnmp.ToBigInt(result.Variables[1].Value).Int64()),
 	}, nil
 }

@@ -33,9 +33,12 @@ func (p LoadPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[Load Plugin] SNMP Error: %v", err)
 	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
+
 	return map[string]float64{
-		"load.shortterm": float64(result.Variables[0].Value.(int)) / 100,
-		"load.midterm":   float64(result.Variables[1].Value.(int)) / 100,
-		"load.longterm":  float64(result.Variables[2].Value.(int)) / 100,
+		"load.shortterm": float64(gosnmp.ToBigInt(result.Variables[0].Value).Int64()) / 100,
+		"load.midterm":   float64(gosnmp.ToBigInt(result.Variables[1].Value).Int64()) / 100,
+		"load.longterm":  float64(gosnmp.ToBigInt(result.Variables[2].Value).Int64()) / 100,
 	}, nil
 }

@@ -15,10 +15,23 @@
 package plugins
 
 import (
+	"github.com/prometheus/common/log"
 	"github.com/soniah/gosnmp"
 )
 
 // Plugin defines a SNMP receiver
 type Plugin interface {
 	Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error)
+}
+
+func printSNMPResult(result *gosnmp.SnmpPacket) {
+	for i, variable := range result.Variables {
+		log.Debugf("[Plugin] %d: oid: %s ", i, variable.Name)
+		switch variable.Type {
+		case gosnmp.OctetString:
+			log.Debugf("[Plugin] string: %s", string(variable.Value.([]byte)))
+		default:
+			log.Debugf("[Plugin] number: %d", gosnmp.ToBigInt(variable.Value))
+		}
+	}
 }

@@ -56,7 +56,10 @@ func NewClient(dsIP string, interval time.Duration) (*Client, error) {
 			Timeout:   time.Duration(2) * time.Second,
 		},
 	}, nil
+}
 
+func (c *Client) Connect() error {
+	return c.SNMP.Connect()
 }
 
 func (c *Client) SystemMetrics() (map[string]float64, error) {
@@ -81,12 +84,12 @@ func (c *Client) CPUMetrics() (map[string]float64, error) {
 
 func (c *Client) MemoryMetrics() (map[string]float64, error) {
 	log.Infof("[Client] Collect Memory metrics")
-	return c.collect(c.Plugins["memory"])
+	return c.collect(c.Plugins["mem"])
 }
 
 func (c *Client) NetworkMetrics() (map[string]float64, error) {
 	log.Infof("[Client] Collect Network metrics")
-	return c.collect(c.Plugins["network"])
+	return c.collect(c.Plugins["net"])
 }
 
 func (c *Client) collect(plugin plugins.Plugin) (map[string]float64, error) {

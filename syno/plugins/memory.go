@@ -39,14 +39,17 @@ func (p MemoryPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[Memory Plugin] SNMP Error: %v", err)
 	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
+
 	return map[string]float64{
-		"mem-total-swap": float64(result.Variables[0].Value.(uint)),
-		"mem-avail-swap": float64(result.Variables[1].Value.(uint)),
-		"mem-total-real": float64(result.Variables[2].Value.(uint)),
-		"mem-avail-real": float64(result.Variables[3].Value.(uint)),
-		"mem-total-free": float64(result.Variables[4].Value.(uint)),
-		"mem-shared":     float64(result.Variables[5].Value.(uint)),
-		"mem-buffer":     float64(result.Variables[6].Value.(uint)),
-		"mem-cached":     float64(result.Variables[7].Value.(uint)),
+		"mem-total-swap": float64(gosnmp.ToBigInt(result.Variables[0].Value).Int64()),
+		"mem-avail-swap": float64(gosnmp.ToBigInt(result.Variables[1].Value).Int64()),
+		"mem-total-real": float64(gosnmp.ToBigInt(result.Variables[2].Value).Int64()),
+		"mem-avail-real": float64(gosnmp.ToBigInt(result.Variables[3].Value).Int64()),
+		"mem-total-free": float64(gosnmp.ToBigInt(result.Variables[4].Value).Int64()),
+		"mem-shared":     float64(gosnmp.ToBigInt(result.Variables[5].Value).Int64()),
+		"mem-buffer":     float64(gosnmp.ToBigInt(result.Variables[6].Value).Int64()),
+		"mem-cached":     float64(gosnmp.ToBigInt(result.Variables[7].Value).Int64()),
 	}, nil
 }

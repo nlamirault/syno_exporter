@@ -44,9 +44,12 @@ func getTemperatures(snmp *gosnmp.GoSNMP) (map[int]float64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[Disk Plugin] SNMP Error: %v", err)
 	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
+
 	temps := map[int]float64{}
 	for i, variable := range result.Variables {
-		temps[i] = float64(variable.Value.(int))
+		temps[i] = float64(gosnmp.ToBigInt(variable.Value).Int64())
 	}
 	return temps, nil
 }

@@ -44,15 +44,17 @@ func (p SystemPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[System Plugin] SNMP Error: %v", err)
 	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
 	return map[string]float64{
-		"system-status":          float64(result.Variables[0].Value.(uint)),
-		"system-temperature":     float64(result.Variables[1].Value.(uint)),
-		"system-powerStatus":     float64(result.Variables[2].Value.(uint)),
-		"system-systemFanStatus": float64(result.Variables[3].Value.(uint)),
-		"system-cpuFanStatus":    float64(result.Variables[4].Value.(uint)),
+		"system-status":          float64(gosnmp.ToBigInt(result.Variables[0].Value).Int64()),
+		"system-temperature":     float64(gosnmp.ToBigInt(result.Variables[1].Value).Int64()),
+		"system-powerStatus":     float64(gosnmp.ToBigInt(result.Variables[2].Value).Int64()),
+		"system-systemFanStatus": float64(gosnmp.ToBigInt(result.Variables[3].Value).Int64()),
+		"system-cpuFanStatus":    float64(gosnmp.ToBigInt(result.Variables[4].Value).Int64()),
 		// "system-modelName":        float64(result.Variables[5].Value.(string)),
 		// "system-serialNumber":     float64(result.Variables[6].Value.(string)),
 		// "system-version":          float64(result.Variables[7].Value.(string)),
-		"system-upgradeAvailable": float64(result.Variables[8].Value.(uint)),
+		"system-upgradeAvailable": float64(gosnmp.ToBigInt(result.Variables[5].Value).Int64()),
 	}, nil
 }

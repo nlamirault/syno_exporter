@@ -25,28 +25,30 @@ type CPUPlugin struct{}
 
 func (p CPUPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
 	oids := []string{
-		// ".1.3.6.1.4.1.2021.11.50.0",
-		// ".1.3.6.1.4.1.2021.11.51.0",
-		// ".1.3.6.1.4.1.2021.11.52.0",
-		// ".1.3.6.1.4.1.2021.11.53.0",
-		// ".1.3.6.1.4.1.2021.11.54.0",
-		// ".1.3.6.1.4.1.2021.11.55.0",
-		// ".1.3.6.1.4.1.2021.11.56.0",
-		".1.3.6.1.4.1.9.2.1.58.0",
+		".1.3.6.1.4.1.2021.11.50.0",
+		".1.3.6.1.4.1.2021.11.51.0",
+		".1.3.6.1.4.1.2021.11.52.0",
+		".1.3.6.1.4.1.2021.11.53.0",
+		".1.3.6.1.4.1.2021.11.54.0",
+		".1.3.6.1.4.1.2021.11.55.0",
+		".1.3.6.1.4.1.2021.11.56.0",
+		// ".1.3.6.1.4.1.9.2.1.58.0",
 	}
 	log.Infof("[CPU Plugin] Get SNMP data")
 	result, err := snmp.Get(oids)
 	if err != nil {
 		return nil, fmt.Errorf("[CPU Plugin] SNMP Error: %v", err)
 	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
 	return map[string]float64{
-		"cpu-load": float64(result.Variables[0].Value.(uint)),
-		// "cpu-0.cpu-user":   float64(result.Variables[0].Value.(uint)),
-		// "cpu-0.cpu-nice":   float64(result.Variables[1].Value.(uint)),
-		// "cpu-0.cpu-system": float64(result.Variables[2].Value.(uint)),
-		// "cpu-0.cpu-idle":   float64(result.Variables[3].Value.(uint)),
-		// "cpu-0.cpu-wait":      float64(result.Variables[4].Value.(uint)),
-		// "cpu-0.cpu-kernel":    float64(result.Variables[5].Value.(uint)),
-		// "cpu-0.cpu-interrupt": float64(result.Variables[6].Value.(uint)),
+		// "cpu-load": float64(result.Variables[0].Value.(uint)),
+		"cpu-0.cpu-user":      float64(gosnmp.ToBigInt(result.Variables[0].Value).Int64()),
+		"cpu-0.cpu-nice":      float64(gosnmp.ToBigInt(result.Variables[1].Value).Int64()),
+		"cpu-0.cpu-system":    float64(gosnmp.ToBigInt(result.Variables[2].Value).Int64()),
+		"cpu-0.cpu-idle":      float64(gosnmp.ToBigInt(result.Variables[3].Value).Int64()),
+		"cpu-0.cpu-wait":      float64(gosnmp.ToBigInt(result.Variables[4].Value).Int64()),
+		"cpu-0.cpu-kernel":    float64(gosnmp.ToBigInt(result.Variables[5].Value).Int64()),
+		"cpu-0.cpu-interrupt": float64(gosnmp.ToBigInt(result.Variables[6].Value).Int64()),
 	}, nil
 }
