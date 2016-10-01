@@ -256,6 +256,8 @@ func (e *Exporter) collectSystemMetrics(ch chan<- prometheus.Metric) {
 		log.Errorf("[syno] Can't retrieve system metrics: %v", err)
 		return
 	}
+	log.Infof("SNMP System metrics: %v", resp)
+
 	ch <- prometheus.MustNewConstMetric(
 		systemStatus, prometheus.GaugeValue, resp["system-status"],
 	)
@@ -277,11 +279,13 @@ func (e *Exporter) collectSystemMetrics(ch chan<- prometheus.Metric) {
 }
 
 func (e *Exporter) collectDiskMetrics(ch chan<- prometheus.Metric) {
-	// resp, err := e.Client.DiskMetrics()
-	// if err != nil {
-	// 	log.Errorf("[syno] Can't retrieve Disk metrics: %v", err)
-	// 	return
-	// }
+	resp, err := e.Client.DiskMetrics()
+	if err != nil {
+		log.Errorf("[syno] Can't retrieve Disk metrics: %v", err)
+		return
+	}
+	log.Infof("SNMP Disk metrics: %v", resp)
+
 }
 
 func (e *Exporter) collectLoadMetrics(ch chan<- prometheus.Metric) {
@@ -290,7 +294,7 @@ func (e *Exporter) collectLoadMetrics(ch chan<- prometheus.Metric) {
 		log.Errorf("[syno] Can't retrieve Load metrics: %v", err)
 		return
 	}
-	log.Debugf("SNMP Load response: %s", resp)
+	log.Infof("SNMP Load response: %s", resp)
 	ch <- prometheus.MustNewConstMetric(
 		loadShort, prometheus.GaugeValue, resp["load.shortterm"],
 	)
@@ -308,7 +312,7 @@ func (e *Exporter) collectCPUMetrics(ch chan<- prometheus.Metric) {
 		log.Errorf("[syno] Can't retrieve CPU metrics: %v", err)
 		return
 	}
-	log.Debugf("SNMP CPU response: %s", resp)
+	log.Infof("SNMP CPU response: %s", resp)
 	ch <- prometheus.MustNewConstMetric(
 		cpuUser, prometheus.GaugeValue, resp["cpu-0.cpu-user"],
 	)
@@ -338,7 +342,7 @@ func (e *Exporter) collectMemoryMetrics(ch chan<- prometheus.Metric) {
 		log.Errorf("[syno] Can't retrieve Memory metrics: %v", err)
 		return
 	}
-	log.Debugf("SNMP Memory response: %s", resp)
+	log.Infof("SNMP Memory response: %s", resp)
 	ch <- prometheus.MustNewConstMetric(
 		memTotalSwap, prometheus.GaugeValue, resp["mem-total-swap"],
 	)
@@ -371,7 +375,7 @@ func (e *Exporter) collectNetworkMetrics(ch chan<- prometheus.Metric) {
 		log.Errorf("[syno] Can't retrieve Network metrics: %v", err)
 		return
 	}
-	log.Debugf("SNMP Network response: %s", resp)
+	log.Infof("SNMP Network response: %s", resp)
 	ch <- prometheus.MustNewConstMetric(
 		netIn, prometheus.GaugeValue, resp["net-in"],
 	)
