@@ -42,6 +42,10 @@ Check SNMP informations from your Diskstation (Change your *community* name):
     # Get available disk space for /
     $ snmpget -v 1 -c "public" 192.168.1.11 .1.3.6.1.4.1.2021.9.1.7.1
 
+## Monitoring
+
+Use [docker-compose.yml][] (or [docker-compose-rpi.yml] for RaspberryPI) to launch [Prometheus][] and [Grafana][] containers.
+
 
 ## Development
 
