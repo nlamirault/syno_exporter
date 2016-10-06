@@ -26,9 +26,10 @@ scrape_configs:
     # metrics_path defaults to '/metrics'
     # scheme defaults to 'http'.
 
-    static_configs:
-      - targets: ['localhost:9191']
+    target_groups:
+      - targets: ['localhost:9090']
 
   - job_name: 'syno'
+    scrape_interval: 1m  
     target_groups:
       - targets: ['localhost:9111']
