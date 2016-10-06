@@ -240,6 +240,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		log.Errorln("Can't connect to Synology for SNMP: %s", err)
 		return
 	}
+	defer e.Client.SNMP.Conn.Close()
+
 	e.collectSystemMetrics(ch)
 	e.collectCPUMetrics(ch)
 	e.collectLoadMetrics(ch)
