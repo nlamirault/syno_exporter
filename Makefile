@@ -27,7 +27,6 @@ DIR = $(shell pwd)
 DOCKER = docker
 
 GO = go
-GLIDE = glide
 
 GOX = gox -os="linux darwin windows freebsd openbsd netbsd"
 GOX_ARGS = "-output={{.Dir}}-$(VERSION)_{{.OS}}_{{.Arch}}"
@@ -45,7 +44,6 @@ MAKE_COLOR=\033[33;01m%-20s\033[0m
 
 MAIN = github.com/nlamirault/syno_exporter
 SRCS = $(shell git ls-files '*.go' | grep -v '^vendor/')
-PKGS = $(shell glide novendor)
 EXE = $(shell ls syno_exporter-${VERSION}_*)
 
 PACKAGE=$(APP)-$(VERSION)
@@ -66,7 +64,7 @@ clean: ## Cleanup
 init: ## Install requirements
 	@echo -e "$(OK_COLOR)[$(APP)] Install requirements$(NO_COLOR)"
 	@go get -u github.com/golang/glog
-	@go get -u github.com/Masterminds/glide
+	@go get -u github.com/kardianos/govendor
 	@go get -u github.com/Masterminds/rmvcsdir
 	@go get -u github.com/golang/lint/golint
 	@go get -u github.com/kisielk/errcheck
@@ -76,7 +74,7 @@ init: ## Install requirements
 .PHONY: deps
 deps: ## Install dependencies
 	@echo -e "$(OK_COLOR)[$(APP)] Update dependencies$(NO_COLOR)"
-	@glide up -u -s -v
+	@govendor update
 
 .PHONY: build
 build: ## Make binary
@@ -86,7 +84,7 @@ build: ## Make binary
 .PHONY: test
 test: ## Launch unit tests
 	@echo -e "$(OK_COLOR)[$(APP)] Launch unit tests $(NO_COLOR)"
-	@$(GO) test -v $$(glide nv)
+	@govendor test +local
 
 .PHONY: lint
 lint: ## Launch golint
