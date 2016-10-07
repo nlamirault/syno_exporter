@@ -1,0 +1,60 @@
+// Copyright (C) 2016 Nicolas Lamirault <nicolas.lamirault@gmail.com>
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package plugins
+
+import (
+	"fmt"
+
+	"github.com/prometheus/common/log"
+	"github.com/soniah/gosnmp"
+)
+
+var (
+	oidSystem = ".1.3.6.1.4.1.6574.1"
+)
+
+type SystemPlugin struct{}
+
+func (p SystemPlugin) Fetch(snmp *gosnmp.GoSNMP) (map[string]float64, error) {
+	oids := []string{
+		fmt.Sprintf("%s.1", oidSystem),   // systemStatus
+		fmt.Sprintf("%s.2", oidSystem),   // temperature
+		fmt.Sprintf("%s.3", oidSystem),   // powerStatus
+		fmt.Sprintf("%s.4.1", oidSystem), // systemFanStatus
+		fmt.Sprintf("%s.4.2", oidSystem), // cpuFanStatus
+		// fmt.Sprintf("%s.5.1", oidSystem), // modelName
+		// fmt.Sprintf("%s.5.1", oidSystem), // serialNumber
+		// fmt.Sprintf("%s.5.3", oidSystem), // version
+		fmt.Sprintf("%s.5.4", oidSystem), // upgradeAvailable
+	}
+	log.Infof("[System Plugin] Get SNMP data")
+	result, err := snmp.Get(oids)
+	if err != nil {
+		return nil, fmt.Errorf("[System Plugin] SNMP Error: %v", err)
+	}
+	log.Debugf("SNMP System result: %s", result)
+	printSNMPResult(result)
+	return map[string]float64{
+		"system-status":          float64(gosnmp.ToBigInt(result.Variables[0].Value).Int64()),
+		"system-temperature":     float64(gosnmp.ToBigInt(result.Variables[1].Value).Int64()),
+		"system-powerStatus":     float64(gosnmp.ToBigInt(result.Variables[2].Value).Int64()),
+		"system-systemFanStatus": float64(gosnmp.ToBigInt(result.Variables[3].Value).Int64()),
+		"system-cpuFanStatus":    float64(gosnmp.ToBigInt(result.Variables[4].Value).Int64()),
+		// "system-modelName":        float64(result.Variables[5].Value.(string)),
+		// "system-serialNumber":     float64(result.Variables[6].Value.(string)),
+		// "system-version":          float64(result.Variables[7].Value.(string)),
+		"system-upgradeAvailable": float64(gosnmp.ToBigInt(result.Variables[5].Value).Int64()),
+	}, nil
+}
